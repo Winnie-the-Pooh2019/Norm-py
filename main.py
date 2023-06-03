@@ -1,6 +1,6 @@
 from math import sqrt
 import numpy as np
-from scipy.stats import norm
+from scipy.stats import norm, chi2, chisquare
 
 
 def min_neighbour_index(freq, index):
@@ -12,14 +12,6 @@ def min_neighbour_index(freq, index):
         return index - 1
     else:
         return index + 1
-
-
-class Interval:
-    def __int__(self, values, bounds, frequency):
-        self.values = values
-        self.bounds = bounds
-        self.frequency = frequency
-        th_frequency = 0.0
 
 
 n = 100
@@ -43,18 +35,19 @@ print(f'Ошибки оценивания стандартного отклон�
 
 k = 1 + 3.3221 * np.log10(n)
 h = (max(x) - min(x)) / k
-iss = np.arange(min(x), max(x), h)  # разбиение интервалов
-intervals = [(iss[i], iss[i + 1]) for i in range(len(iss) - 1)]
-xi = [it[0] + it[1] / 2 for it in intervals]
+iss = np.arange(min(x), max(x) + h, h)  # разбиение интервалов
+xi = (iss[:-1] + iss[1:]) / 2
 ui = (xi - mean) / std
+fqs = n * h / std * norm.pdf(ui)
+
+intervals = [(iss[i], iss[i + 1]) for i in range(len(iss) - 1)]
 elements_in_interval = [[e for e in x if interval[0] <= e <= interval[1]] for interval in intervals]
 frequency = [len(e) for e in elements_in_interval]
-fqs = n * h / std * norm.pdf(ui)
+print("FREQS", sum(frequency))
 freq_theoretical = [f for f in fqs]
 
 print("h = ", h)
 print("freqs = ", frequency)
-# print(elements_in_interval)
 
 i = len(intervals) - 1
 while i in range(len(intervals)):
@@ -77,9 +70,45 @@ while i in range(len(intervals)):
     i -= 1
 
 print(f'freqs = {frequency}')
+print(f'freqs_th = {freq_theoretical}')
 
-# for interval in intervals:
-#     elements_in_interval.append(0)
-#
-#     for e in x:
-#         if ()
+hi = 0
+for i in range(len(intervals)):
+    hi += (((frequency[i] - freq_theoretical[i]) ** 2) / freq_theoretical[i])
+
+hi_list = [3.8, 6.0, 7.8, 9.5, 11.1, 12.6, 14.1, 15.5]
+hi_crit = hi_list[len(frequency) - 3]
+
+print(f'Число степеней свободы = {len(frequency) - 3}')
+print(f'Х2 наблюдаемый = {hi}')
+print(f'Х2 критический = {hi_crit}')
+
+if hi > hi_crit:
+    print("Гипотеза отвергается")
+else:
+    print("Гипотеза принимается")
+
+lamda_crit = 1.36
+
+# intervals = [(iss[i], iss[i + 1]) for i in range(len(iss) - 1)]
+# elements_in_interval = [[e for e in x if interval[0] <= e <= interval[1]] for interval in intervals]
+# frequency = [len(e) for e in elements_in_interval]
+
+freq_acc = [sum(frequency[:i + 1]) for i in range(len(frequency))]
+xi = np.array([(interval[0] + interval[1]) / 2 for interval in intervals])
+dist = 0.5 + norm.cdf((xi - mx) / sx)
+dist_n = np.array([fa / n for fa in freq_acc])
+dist_diff = np.abs(dist - dist_n)
+max_diff = max(dist_diff)
+lamda = max_diff * sqrt(n)
+
+print(lamda)
+
+if lamda > lamda_crit:
+    print("Гипотеза отвергается")
+else:
+    print("Гипотеза подтверждается")
+
+print(f'dist = {dist}')
+print(f'dist_n = {dist_n}')
+print(f'dist_diff = {dist_diff}')
