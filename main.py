@@ -1,6 +1,7 @@
 from math import sqrt
 import numpy as np
 from scipy.stats import norm, chi2, chisquare
+import pandas as panda
 
 
 def min_neighbour_index(freq, index):
@@ -12,6 +13,13 @@ def min_neighbour_index(freq, index):
         return index - 1
     else:
         return index + 1
+
+
+def print_table(inters, freq, freq_th):
+    print(panda.DataFrame({'Интервалы': [f'{interval[0]:.5f} - {interval[1]:.5f}' for interval in inters],
+                           'Эмп. частоты': freq,
+                           'Теор. частоты': freq_th}))
+    print()
 
 
 n = 100
@@ -43,11 +51,12 @@ fqs = n * h / std * norm.pdf(ui)
 intervals = [(iss[i], iss[i + 1]) for i in range(len(iss) - 1)]
 elements_in_interval = [[e for e in x if interval[0] <= e <= interval[1]] for interval in intervals]
 frequency = [len(e) for e in elements_in_interval]
-print("FREQS", sum(frequency))
 freq_theoretical = [f for f in fqs]
 
 print("h = ", h)
-print("freqs = ", frequency)
+
+print("\nИнтервалы до объединения")
+print_table(intervals, frequency, freq_theoretical)
 
 i = len(intervals) - 1
 while i in range(len(intervals)):
@@ -69,8 +78,8 @@ while i in range(len(intervals)):
 
     i -= 1
 
-print(f'freqs = {frequency}')
-print(f'freqs_th = {freq_theoretical}')
+print("\nИнтервалы после объединения")
+print_table(intervals, frequency, freq_theoretical)
 
 hi = 0
 for i in range(len(intervals)):
@@ -102,13 +111,19 @@ dist_diff = np.abs(dist - dist_n)
 max_diff = max(dist_diff)
 lamda = max_diff * sqrt(n)
 
-print(lamda)
+
+print(panda.DataFrame({"xi": xi,
+                       'ni': frequency,
+                       'n нак': freq_acc,
+                       'Fn(x)': dist_n,
+                       'F(x)': dist,
+                       '|Fn(x) - F(x)|': dist_diff}))
+print()
+
+print(f'lamda = {lamda}')
+print(f'lamda_crit = {lamda_crit}')
 
 if lamda > lamda_crit:
     print("Гипотеза отвергается")
 else:
     print("Гипотеза подтверждается")
-
-print(f'dist = {dist}')
-print(f'dist_n = {dist_n}')
-print(f'dist_diff = {dist_diff}')
